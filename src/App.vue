@@ -18,7 +18,7 @@ const columns = reactive([
     </header>
     <div class="flex gap-4">
       <Column
-        v-for="(column, index) in columns"
+        v-for="column in columns"
         :key="column.id"
         :column="column"
         @update-columns="columns = $event"

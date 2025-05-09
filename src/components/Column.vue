@@ -2,34 +2,47 @@
 import BoardCard from "@/components/BoardCard.vue";
 import Button from "@/components/ui/button/Button.vue";
 import Card from "@/components/ui/card/Card.vue";
-import { defineEmits, defineProps } from "vue";
+import CardFooter from "@/components/ui/card/CardFooter.vue";
 import CardHeader from "@/components/ui/card/CardHeader.vue";
 import CardTitle from "@/components/ui/card/CardTitle.vue";
-import CardFooter from "@/components/ui/card/CardFooter.vue";
+import { defineEmits, defineProps } from "vue";
+import type { CardData } from "@/types";
+import { Icon } from "@iconify/vue";
 // @ts-ignore
 import draggable from "vuedraggable";
-import { Icon } from "@iconify/vue";
 
 const props = defineProps<{
   column: { id: string; title: string; cards: { id: string; title: string }[] };
 }>();
+
 const emit = defineEmits(["update-columns"]);
 
-const addCard = () => {
+function addCard() {
   props.column.cards.push({ id: crypto.randomUUID(), title: "New Task" });
-};
+}
 
-const deleteCard = (index: number) => {
-  props.column.cards.splice(index, 1);
-};
+function deleteCard(cardId: string) {
+  const index = props.column.cards.findIndex((c) => c.id === cardId);
+  if (index !== -1) {
+    props.column.cards.splice(index, 1);
+  }
+}
 
-const onDragEnd = () => {
+function duplicateCard(card: CardData) {
+  const index = props.column.cards.findIndex((c) => c.id === card.id);
+  if (index !== -1) {
+    const newCard = { ...props.column.cards[index], id: crypto.randomUUID() };
+    props.column.cards.splice(index + 1, 0, { ...newCard, title: "Copy of " + newCard.title });
+  }
+}
+
+function onDragEnd() {
   emit("update-columns");
-};
+}
 </script>
 
 <template>
-  <Card class="flex-1 py-4">
+  <Card class="flex-1 py-4 gap-3">
     <CardHeader class="px-3">
       <CardTitle>
         <input
@@ -42,14 +55,17 @@ const onDragEnd = () => {
     <draggable
       v-model="column.cards"
       group="tasks"
-      itemkey="id"
+      itemKey="id"
       @end="onDragEnd"
       class="flex flex-1 flex-col gap-2 px-6 vuedraggable"
     >
       <template #item="{ element }">
-        <transition-group name="list" tag="div">
-          <BoardCard :card="element" @delete="() => deleteCard(element.id)" />
-        </transition-group>
+        <BoardCard
+          :key="element.id"
+          :card="element"
+          @delete="() => deleteCard(element.id)"
+          @duplicate="() => duplicateCard(element)"
+        />
       </template>
     </draggable>
 
